@@ -35,7 +35,7 @@ const createMissingImports = filePath => through.obj(function(chunk, env, cb) {
   cb();
 });
 
-module.exports = (pathName, cb = noop) => {
+module.exports = (pathName = './', cb = noop) => {
   const emitter = new EventEmitter();
   const watcher = chokidar.watch(pathName, {ignored: /[\/\\]\./});
 

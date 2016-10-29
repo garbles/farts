@@ -1,10 +1,13 @@
 {
-  "name": "template",
+  "name": "farts",
   "version": "0.0.1",
-  "description": "Watch your file system and initialize files with sane defaults",
+  "description": "Watch your file system and initialize files from scaffolding",
   "main": "index.js",
   "author": "Gabe Scholz",
   "license": "MIT",
+  "bin": {
+    "farts": "./bin/cli.js"
+  },
   "scripts": {
     "test": "jest"
   },
