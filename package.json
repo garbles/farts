@@ -9,10 +9,12 @@
     "farts": "./bin/cli.js"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "lint": "standard"
   },
   "dependencies": {
     "chokidar": "^1.6.1",
+    "death": "^1.0.0",
     "glob": "^7.1.1",
     "jscodeshift": "^0.3.30",
     "lodash": "^4.16.4",
@@ -26,6 +28,13 @@
   },
   "devDependencies": {
     "jest": "^16.0.1",
-    "rimraf": "^2.5.4"
+    "rimraf": "^2.5.4",
+    "standard": "^8.5.0"
+  },
+  "standard": {
+    "env": {
+      "node": true,
+      "jest": true
+    }
   }
 }
