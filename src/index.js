@@ -5,11 +5,13 @@ const glob = require(`glob`)
 const path = require(`path`)
 const template = require(`lodash/template`)
 const noop = require(`lodash/noop`)
+const last = require(`lodash/last`)
 const through = require(`through2`)
 const j = require(`jscodeshift`)
 
-const processTemplate = custom => through.obj(function (chunk, env, cb) {
-  const config = Object.assign({}, require(`lodash/string`), custom)
+const processTemplate = fileURL => through.obj(function (chunk, env, cb) {
+  // should nest fileURL in file param
+  const config = Object.assign({}, require(`lodash`), fileURL)
   const result = template(chunk.toString())(config)
 
   this.push(result)
@@ -37,6 +39,8 @@ const createMissingImports = filePath => through.obj(function (chunk, env, cb) {
 
 module.exports = (pathName = `./`, cb = noop) => {
   const emitter = new EventEmitter()
+  const cwd = process.cwd()
+  const watchPath = path.resolve(cwd, pathName)
   const watcher = chokidar.watch(pathName, {ignored: /[\/\\]\./})
 
   const api = {
@@ -51,7 +55,8 @@ module.exports = (pathName = `./`, cb = noop) => {
     watcher.on(`add`, file => {
       fs.stat(file, (err, stats) => {
         if (err) {
-          throw err
+          emitter.emit(`error`, err)
+          return
         }
 
         if (stats.birthtime.getTime() !== stats.atime.getTime() || stats.size > 0) {
@@ -59,17 +64,28 @@ module.exports = (pathName = `./`, cb = noop) => {
         }
 
         const fileURL = path.parse(file)
-        const templateGlob = path.join(fileURL.dir, `.template${fileURL.ext}`)
 
-        glob(templateGlob, (err, files) => {
+        const folders =
+          path.relative(watchPath, fileURL.dir)
+            .split('/')
+            .reduce(
+              (acc, next) => acc.concat(acc[acc.length - 1] + '/' + next),
+              [watchPath])
+            .join(',')
+
+        const matches = `.template.${fileURL.base},.template${fileURL.ext}`
+        const pattern = `{${folders}}/{${matches}}`
+
+        glob(pattern, (err, files) => {
           if (err) {
-            throw err
+            emitter.emit(`error`, err)
+            return
           }
 
-          const templatePath = files[0]
+          const template = last(files)
 
-          if (templatePath) {
-            const reader = fs.createReadStream(templatePath)
+          if (template) {
+            const reader = fs.createReadStream(template)
             const writer = fs.createWriteStream(file)
 
             reader
@@ -85,7 +101,11 @@ module.exports = (pathName = `./`, cb = noop) => {
 
             reader.on(`end`, () => {
               writer.end()
-              emitter.emit(`data`, file, templatePath)
+              emitter.emit(
+                `data`,
+                path.relative(cwd, file),
+                path.relative(cwd, template)
+              )
             })
           }
         })

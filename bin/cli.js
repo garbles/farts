@@ -3,6 +3,8 @@
 const path = require(`path`)
 const ON_DEATH = require(`death`)
 const chalk = require(`chalk`)
+const flatten = require(`lodash/flatten`)
+const padStart = require(`lodash/padStart`)
 const watch = require(`../src`)
 const version = require(`../package.json`).version
 
@@ -20,11 +22,20 @@ const timestamp = () => {
   return `[${hours}:${minutes}:${seconds}]`
 }
 
-const log = msg =>
-  console.log(timestamp(), chalk.green(msg))
+const whitespace = padStart('', timestamp().length)
+
+const log = (...msgs) => {
+  const [head, ...tail] = flatten(msgs)
+
+  console.log(timestamp(), chalk.green(head))
+
+  tail.forEach(msg => {
+    console.log(whitespace, chalk.green(msg))
+  })
+}
 
 const error = msg =>
-  console.log(timestamp(), chalk.red(msg))
+  console.log(timestamp(), chalk.red(`ERROR: ${msg}`))
 
 watcher.on(`ready`, pathName => {
   const fullPath = path.resolve(process.cwd(), pathName)
@@ -34,7 +45,12 @@ watcher.on(`ready`, pathName => {
 })
 
 watcher.on(`data`, (newFilePath, templatePath) => {
-  log(`New file ${newFilePath} was scaffolded with ${templatePath}`)
+  log([
+    `File created:`,
+    `  ${newFilePath}`,
+    `Used scaffold:`,
+    `  ${templatePath}`
+  ])
 })
 
 watcher.on(`error`, error)
