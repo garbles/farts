@@ -1,6 +1,6 @@
 {
   "name": "farts",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Watch your file system and initialize files from scaffolding",
   "main": "index.js",
   "author": "Gabe Scholz",
