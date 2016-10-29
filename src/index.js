@@ -7,6 +7,8 @@ const resolve = require(`resolve`)
 const template = require(`lodash/template`)
 const noop = require(`lodash/noop`)
 const last = require(`lodash/last`)
+const takeRight = require(`lodash/takeRight`)
+const sortBy = require(`lodash/sortBy`)
 const through = require(`through2`)
 const j = require(`jscodeshift`)
 
@@ -91,7 +93,9 @@ module.exports = (pathName = `./`, cb = noop) => {
             return
           }
 
-          const template = last(files)
+          const lastTwo = takeRight(files, 2)
+          const deepest = sortBy(lastTwo, f => f.length)
+          const template = last(deepest)
 
           if (template) {
             const reader = fs.createReadStream(template)
