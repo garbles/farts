@@ -1,0 +1,28 @@
+{
+  "name": "template",
+  "version": "0.0.1",
+  "description": "Watch your file system and initialize files with sane defaults",
+  "main": "index.js",
+  "author": "Gabe Scholz",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "chokidar": "^1.6.1",
+    "glob": "^7.1.1",
+    "jscodeshift": "^0.3.30",
+    "lodash": "^4.16.4",
+    "through2": "^2.0.1"
+  },
+  "jest": {
+    "verbose": true,
+    "testPathIgnorePatterns": [
+      "/node_modules/"
+    ]
+  },
+  "devDependencies": {
+    "jest": "^16.0.1",
+    "rimraf": "^2.5.4"
+  }
+}
