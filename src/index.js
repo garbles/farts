@@ -1,15 +1,15 @@
-const EventEmitter = require('events')
-const chokidar = require('chokidar')
-const fs = require('fs')
-const glob = require('glob')
-const path = require('path')
-const template = require('lodash/template')
-const noop = require('lodash/noop')
-const through = require('through2')
-const j = require('jscodeshift')
+const EventEmitter = require(`events`)
+const chokidar = require(`chokidar`)
+const fs = require(`fs`)
+const glob = require(`glob`)
+const path = require(`path`)
+const template = require(`lodash/template`)
+const noop = require(`lodash/noop`)
+const through = require(`through2`)
+const j = require(`jscodeshift`)
 
 const processTemplate = custom => through.obj(function (chunk, env, cb) {
-  const config = Object.assign({}, require('lodash/string'), custom)
+  const config = Object.assign({}, require(`lodash/string`), custom)
   const result = template(chunk.toString())(config)
 
   this.push(result)
@@ -20,13 +20,13 @@ const processTemplate = custom => through.obj(function (chunk, env, cb) {
 const createMissingImports = filePath => through.obj(function (chunk, env, cb) {
   const str = chunk.toString()
 
-  j(str, {parser: require('jscodeshift/parser/flow')})
+  j(str, {parser: require(`jscodeshift/parser/flow`)})
     .find(j.ImportDeclaration)
     .forEach(p => {
-      const resolved = path.resolve(filePath.dir, p.get('source', 'value').value)
+      const resolved = path.resolve(filePath.dir, p.get(`source`, `value`).value)
       fs.access(resolved, fs.F_OK, err => {
         if (err) {
-          fs.writeFileSync(resolved, '')
+          fs.writeFileSync(resolved, ``)
         }
       })
     })
@@ -35,7 +35,7 @@ const createMissingImports = filePath => through.obj(function (chunk, env, cb) {
   cb()
 })
 
-module.exports = (pathName = './', cb = noop) => {
+module.exports = (pathName = `./`, cb = noop) => {
   const emitter = new EventEmitter()
   const watcher = chokidar.watch(pathName, {ignored: /[\/\\]\./})
 
@@ -45,10 +45,10 @@ module.exports = (pathName = './', cb = noop) => {
     kill: () => watcher.unwatch(pathName)
   }
 
-  watcher.on('ready', () => {
+  watcher.on(`ready`, () => {
     cb.call(api)
 
-    watcher.on('add', file => {
+    watcher.on(`add`, file => {
       fs.stat(file, (err, stats) => {
         if (err) {
           throw err
@@ -77,16 +77,22 @@ module.exports = (pathName = './', cb = noop) => {
               .pipe(createMissingImports(fileURL))
               .pipe(writer, {end: true})
 
-            reader.on('end', () => {
+            reader.on(`error`, err => {
+              reader.close()
+              writer.close()
+              emitter.emit(`error`, err)
+            })
+
+            reader.on(`end`, () => {
               writer.end()
-              emitter.emit('data', file)
+              emitter.emit(`data`, file, templatePath)
             })
           }
         })
       })
     })
 
-    emitter.emit('ready', pathName)
+    emitter.emit(`ready`, pathName)
   })
 
   return api
