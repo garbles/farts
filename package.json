@@ -19,6 +19,7 @@
     "glob": "^7.1.1",
     "jscodeshift": "^0.3.30",
     "lodash": "^4.16.4",
+    "resolve": "^1.1.7",
     "through2": "^2.0.1"
   },
   "jest": {

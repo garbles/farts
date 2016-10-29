@@ -3,6 +3,7 @@ const chokidar = require(`chokidar`)
 const fs = require(`fs`)
 const glob = require(`glob`)
 const path = require(`path`)
+const resolve = require(`resolve`)
 const template = require(`lodash/template`)
 const noop = require(`lodash/noop`)
 const last = require(`lodash/last`)
@@ -11,7 +12,7 @@ const j = require(`jscodeshift`)
 
 const processTemplate = fileURL => through.obj(function (chunk, env, cb) {
   // should nest fileURL in file param
-  const config = Object.assign({}, require(`lodash`), fileURL)
+  const config = Object.assign({}, require(`lodash`), {file: fileURL})
   const result = template(chunk.toString())(config)
 
   this.push(result)
@@ -19,16 +20,24 @@ const processTemplate = fileURL => through.obj(function (chunk, env, cb) {
   cb()
 })
 
-const createMissingImports = filePath => through.obj(function (chunk, env, cb) {
+const isRelative = path => /^\./.test(path)
+
+const createMissingImports = fileURL => through.obj(function (chunk, env, cb) {
   const str = chunk.toString()
 
   j(str, {parser: require(`jscodeshift/parser/flow`)})
     .find(j.ImportDeclaration)
     .forEach(p => {
-      const resolved = path.resolve(filePath.dir, p.get(`source`, `value`).value)
-      fs.access(resolved, fs.F_OK, err => {
-        if (err) {
-          fs.writeFileSync(resolved, ``)
+      const value = p.get(`source`, `value`).value
+
+      if (!isRelative(value)) {
+        return // ignore non-relative requires for now
+      }
+
+      resolve(value, {basedir: fileURL.dir}, (err, res) => {
+        if (err || !/node_modules/.test(res)) {
+          const newFilePath = path.resolve(fileURL.dir, value)
+          fs.writeFileSync(newFilePath, ``)
         }
       })
     })
@@ -41,12 +50,12 @@ module.exports = (pathName = `./`, cb = noop) => {
   const emitter = new EventEmitter()
   const cwd = process.cwd()
   const watchPath = path.resolve(cwd, pathName)
-  const watcher = chokidar.watch(pathName, {ignored: /[\/\\]\./})
+  const watcher = chokidar.watch(watchPath, {ignored: /[\/\\]\./})
 
   const api = {
     on: (...args) => emitter.on(...args),
     off: (...args) => emitter.off(...args),
-    kill: () => watcher.unwatch(pathName)
+    kill: () => watcher.unwatch(watchPath)
   }
 
   watcher.on(`ready`, () => {
@@ -112,7 +121,7 @@ module.exports = (pathName = `./`, cb = noop) => {
       })
     })
 
-    emitter.emit(`ready`, pathName)
+    emitter.emit(`ready`, watchPath)
   })
 
   return api
